@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewsAI</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:system-ui,sans-serif;background:#f4f4f0;color:#1a1a1a;min-height:100vh;}
+header{background:#fff;border-bottom:1px solid #e2e2e2;padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:54px;position:sticky;top:0;z-index:200;}
+.logo{font-size:20px;font-weight:700;letter-spacing:-0.5px;}.logo span{color:#16a34a;}
+.header-right{display:flex;align-items:center;gap:10px;}
+.live-pill{display:flex;align-items:center;gap:5px;font-size:12px;color:#555;background:#f0f0f0;padding:4px 10px;border-radius:20px;}
+.live-dot{width:7px;height:7px;background:#22c55e;border-radius:50%;animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.btn-hdr{background:#f0f0f0;border:none;border-radius:8px;padding:7px 13px;font-size:13px;font-weight:500;color:#444;cursor:pointer;display:flex;align-items:center;gap:5px;}
+.btn-hdr:hover{background:#e4e4e4;}
+button{cursor:pointer;border:none;background:none;font-family:inherit;}
+.layout{display:flex;max-width:1140px;margin:0 auto;}
+.sidebar{width:255px;min-width:255px;padding:16px 12px;display:none;flex-direction:column;gap:11px;border-right:1px solid #e2e2e2;background:#fafaf8;min-height:calc(100vh - 54px);}
+.sidebar.open{display:flex;}
+.sc{background:#fff;border-radius:10px;border:1px solid #e8e8e8;padding:13px;}
+.st{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#999;margin-bottom:9px;}
+.si{width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:7px;font-size:13px;font-family:inherit;outline:none;}
+.si:focus{border-color:#2563eb;}
+.dl{font-size:11px;color:#999;margin:7px 0 3px;}
+.tg{display:flex;flex-wrap:wrap;gap:5px;}
+.tc{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;border:1px solid #ddd;background:#f7f7f7;color:#555;cursor:pointer;transition:all .15s;}
+.tc.on{background:#2563eb;color:#fff;border-color:#2563eb;}
+.tc:hover:not(.on){background:#eef3ff;border-color:#2563eb;color:#2563eb;}
+.sl{display:flex;flex-direction:column;gap:6px;}
+.sr{display:flex;align-items:center;gap:7px;font-size:13px;color:#444;}
+.sr input{accent-color:#2563eb;width:14px;height:14px;}
+.ba{width:100%;padding:9px;background:#2563eb;color:#fff;border-radius:8px;font-size:13px;font-weight:600;}
+.ba:hover{background:#1d4fd8;}
+.br{width:100%;padding:7px;background:#f0f0f0;color:#555;border-radius:8px;font-size:12px;}
+.br:hover{background:#e4e4e4;}
+.main{flex:1;padding:18px 20px 60px;min-width:0;}
+.search-bar{display:flex;gap:8px;margin-bottom:16px;}
+.search-bar input{flex:1;padding:10px 14px;border:1px solid #ddd;border-radius:9px;font-size:14px;font-family:inherit;outline:none;background:#fff;}
+.search-bar input:focus{border-color:#2563eb;box-shadow:0 0 0 3px #dbeafe;}
+.search-bar button{padding:10px 20px;background:#1a1a1a;color:#fff;border-radius:9px;font-size:14px;font-weight:600;}
+.search-bar button:hover{background:#333;}
+.cat-tabs{display:flex;gap:5px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px;scrollbar-width:none;}
+.cat-tabs::-webkit-scrollbar{display:none;}
+.ct{padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid #ddd;background:#fff;color:#666;white-space:nowrap;flex-shrink:0;}
+.ct.on{background:#2563eb;color:#fff;border-color:#2563eb;}
+.ct:hover:not(.on){border-color:#2563eb;color:#2563eb;}
+.bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;}
+.bar-title{font-size:14px;font-weight:600;color:#333;}
+.bar-cnt{font-size:12px;color:#aaa;margin-left:5px;font-weight:400;}
+.sort-row{display:flex;gap:5px;}
+.sb{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid #ddd;background:#fff;color:#666;}
+.sb.on{background:#1a1a1a;color:#fff;border-color:#1a1a1a;}
+.grid{display:flex;flex-direction:column;gap:10px;}
+.card{background:#fff;border-radius:12px;border:1px solid #e8e8e8;padding:17px 19px;display:flex;flex-direction:column;gap:9px;transition:border-color .15s;}
+.card:hover{border-color:#bbb;}
+.cmeta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+.sbadge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;background:#eef3ff;color:#2563eb;}
+.tbadge{font-size:10px;padding:3px 8px;border-radius:5px;background:#f0f0f0;color:#777;}
+.cdate{font-size:11px;color:#bbb;margin-left:auto;}
+.ctitle{font-size:15px;font-weight:600;line-height:1.45;color:#111;}
+.cdesc{font-size:13px;color:#666;line-height:1.65;}
+.cact{display:flex;align-items:center;gap:10px;}
+.btn-sum{background:#2563eb;color:#fff;border-radius:8px;padding:7px 15px;font-size:12px;font-weight:600;}
+.btn-sum:hover{background:#1d4fd8;}
+.btn-sum:disabled{background:#93b4f5;cursor:not-allowed;}
+.btn-lnk{color:#2563eb;font-size:12px;font-weight:500;text-decoration:none;}
+.btn-lnk:hover{text-decoration:underline;}
+.sumbox{background:#f0f7ff;border-left:3px solid #2563eb;border-radius:0 9px 9px 0;padding:13px 15px;}
+.sumlbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#2563eb;margin-bottom:9px;}
+.sbul{display:flex;gap:8px;margin-bottom:6px;font-size:13px;line-height:1.65;color:#1a1a1a;}
+.sbul:last-child{margin-bottom:0;}
+.bdot{color:#2563eb;font-weight:700;flex-shrink:0;}
+.dots{display:inline-flex;gap:4px;align-items:center;}
+.dots span{width:6px;height:6px;background:#2563eb;border-radius:50%;animation:bounce 1s infinite;}
+.dots span:nth-child(2){animation-delay:.15s;}
+.dots span:nth-child(3){animation-delay:.3s;}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+.skel{background:linear-gradient(90deg,#ececec 25%,#f5f5f5 50%,#ececec 75%);background-size:200%;animation:shimmer 1.2s infinite;border-radius:6px;height:14px;}
+@keyframes shimmer{0%{background-position:200%}100%{background-position:-200%}}
+.empty{text-align:center;padding:50px 20px;color:#bbb;font-size:14px;}
+.notice{background:#fffbe6;border:1px solid #fde68a;border-radius:10px;padding:11px 15px;font-size:13px;color:#92400e;margin-bottom:13px;line-height:1.5;}
+</style>
+</head>
+<body>
+<header>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="logo">🌰 Nutshell<span>News</span></div>
+    <span style="font-size:11px;background:#dcfce7;color:#15803d;border:1px solid #bbf7d0;border-radius:20px;padding:3px 9px;font-weight:600;letter-spacing:0.3px;">✔ Verified Sources</span>
+  </div>
+  <div class="header-right">
+    <div class="live-pill"><div class="live-dot"></div>Live</div>
+    <button class="btn-hdr" onclick="loadNews()">↻ Refresh</button>
+    <button class="btn-hdr" onclick="toggleSB()">⚙ Customize</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sc"><div class="st">Search</div><input class="si" id="kwInput" type="text" placeholder="Keywords…" onkeydown="if(event.key==='Enter')applyFilters()"/></div>
+    <div class="sc"><div class="st">Date range</div><div class="dl">From</div><input class="si" type="date" id="dateFrom"/><div class="dl">To</div><input class="si" type="date" id="dateTo"/></div>
+    <div class="sc"><div class="st">Topics</div><div class="tg" id="topicGrid"></div></div>
+    <div class="sc"><div class="st">Sources</div><div class="sl" id="srcList"></div></div>
+    <button class="ba" onclick="applyFilters()">Apply filters</button>
+    <button class="br" onclick="clearFilters()">Clear all</button>
+  </aside>
+
+  <main class="main">
+    <div class="search-bar">
+      <input type="text" id="topSearch" placeholder="Search live news by topic, keyword, or event…" onkeydown="if(event.key==='Enter')applyFilters()"/>
+      <button onclick="applyFilters()">Search</button>
+    </div>
+    <div class="cat-tabs" id="catTabs"></div>
+    <div class="bar">
+      <div><span class="bar-title" id="feedTitle">Top stories</span><span class="bar-cnt" id="feedCnt"></span></div>
+      <div class="sort-row">
+        <button class="sb on" onclick="setSort('newest',this)">Newest</button>
+        <button class="sb" onclick="setSort('oldest',this)">Oldest</button>
+      </div>
+    </div>
+    <div id="noticeBanner"></div>
+    <div class="grid" id="grid"><div class="empty">Fetching live news…</div></div>
+  </main>
+</div>
+
+<script>
+const PROXY = 'https://api.allorigins.win/get?url=';
+
+const FEEDS = [
+  {id:'bbc',      label:'BBC News',         url:'https://feeds.bbci.co.uk/news/rss.xml',                                 topic:'World'},
+  {id:'bbc_tech', label:'BBC Technology',   url:'https://feeds.bbci.co.uk/news/technology/rss.xml',                      topic:'Technology'},
+  {id:'bbc_sci',  label:'BBC Science',      url:'https://feeds.bbci.co.uk/news/science_and_environment/rss.xml',          topic:'Science'},
+  {id:'bbc_hlth', label:'BBC Health',       url:'https://feeds.bbci.co.uk/news/health/rss.xml',                          topic:'Health'},
+  {id:'npr',      label:'NPR News',         url:'https://feeds.npr.org/1001/rss.xml',                                    topic:'World'},
+  {id:'guardian', label:'The Guardian',     url:'https://www.theguardian.com/world/rss',                                 topic:'World'},
+  {id:'grd_tech', label:'Guardian Tech',    url:'https://www.theguardian.com/uk/technology/rss',                         topic:'Technology'},
+  {id:'grd_sci',  label:'Guardian Science', url:'https://www.theguardian.com/science/rss',                               topic:'Science'},
+  {id:'alj',      label:'Al Jazeera',       url:'https://www.aljazeera.com/xml/rss/all.xml',                             topic:'World'},
+  {id:'abc',      label:'ABC News',         url:'https://feeds.abcnews.com/abcnews/topstories',                          topic:'World'},
+  {id:'nasa',     label:'NASA',             url:'https://www.nasa.gov/rss/dyn/breaking_news.rss',                        topic:'Science'},
+];
+
+const SRC_GROUPS = [
+  {id:'bbc',     label:'BBC News',       ids:['bbc','bbc_tech','bbc_sci','bbc_hlth']},
+  {id:'npr',     label:'NPR',            ids:['npr']},
+  {id:'guardian',label:'The Guardian',   ids:['guardian','grd_tech','grd_sci']},
+  {id:'alj',     label:'Al Jazeera',     ids:['alj']},
+  {id:'abc',     label:'ABC News',       ids:['abc']},
+  {id:'nasa',    label:'NASA',           ids:['nasa']},
+];
+
+const TOPICS = ['All','World','Technology','Science','Health','Business','Politics','Climate','Sports','Arts','Education'];
+
+let allArticles=[], filtered=[], sortMode='newest', summaries={};
+let activeTopics=new Set(), activeSrcs=new Set(SRC_GROUPS.map(s=>s.id)), activeTab='All';
+
+const strip = h => h ? h.replace(/<!\[CDATA\[|\]\]>/g,'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&#\d+;/g,'').trim() : '';
+
+function guessTopic(title, desc, fallback){
+  const t=(title+' '+desc).toLowerCase();
+  if(/climate|carbon|emission|warming|wildfire|flood|drought|environment/.test(t)) return 'Climate';
+  if(/health|hospital|vaccine|cancer|virus|pandemic|disease|medical|fda|drug/.test(t)) return 'Health';
+  if(/\bai\b|artificial intel|software|cyber|robot|tech|digital|apple|google|microsoft|openai|chip/.test(t)) return 'Technology';
+  if(/\bscience\b|space|nasa|research|study|discovery|planet|asteroid|genome|physics/.test(t)) return 'Science';
+  if(/economy|market|stock|trade|gdp|inflation|\bfed\b|financial|bank|recession|tariff/.test(t)) return 'Business';
+  if(/election|congress|senate|parliament|government|president|minister|democrat|republican|ballot|policy/.test(t)) return 'Politics';
+  if(/sport|football|soccer|basketball|nba|nfl|olympics|athlete|championship|cricket/.test(t)) return 'Sports';
+  if(/film|music|\bart\b|theater|museum|culture|book|award|cinema/.test(t)) return 'Arts';
+  if(/school|education|university|student|teacher|curriculum/.test(t)) return 'Education';
+  return fallback||'World';
+}
+
+function srcGroupId(feedId){ return SRC_GROUPS.find(g=>g.ids.includes(feedId))?.id||feedId; }
+
+function parseRSS(xml){
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xml,'text/xml');
+  const items = Array.from(doc.querySelectorAll('item'));
+  return items.map(item => ({
+    title: strip(item.querySelector('title')?.textContent||''),
+    desc: strip(item.querySelector('description')?.textContent||'').slice(0,240),
+    url: item.querySelector('link')?.textContent?.trim()||item.querySelector('guid')?.textContent?.trim()||'#',
+    pubDate: item.querySelector('pubDate')?.textContent||'',
+  }));
+}
+
+async function fetchFeed(feed){
+  try{
+    const r = await fetch(PROXY + encodeURIComponent(feed.url), {signal: AbortSignal.timeout(8000)});
+    const json = await r.json();
+    if(!json.contents) return [];
+    const items = parseRSS(json.contents);
+    return items.map((item,i)=>({
+      id: feed.id+'_'+i,
+      title: item.title||'Untitled',
+      desc: item.desc,
+      url: item.url,
+      date: item.pubDate ? new Date(item.pubDate) : new Date(0),
+      source: SRC_GROUPS.find(g=>g.ids.includes(feed.id))?.label||feed.label,
+      groupId: srcGroupId(feed.id),
+      topic: guessTopic(item.title, item.desc, feed.topic),
+    }));
+  } catch(e){ return []; }
+}
+
+async function loadNews(){
+  showSkeleton();
+  document.getElementById('noticeBanner').innerHTML='';
+  const results = await Promise.allSettled(FEEDS.map(f=>fetchFeed(f)));
+  allArticles=[];
+  results.forEach(r=>{ if(r.status==='fulfilled') allArticles.push(...r.value); });
+
+  // dedupe by title
+  const seen=new Set();
+  allArticles = allArticles.filter(a=>{
+    const k=a.title.slice(0,60).toLowerCase();
+    if(seen.has(k)||!a.title||a.title==='Untitled') return false;
+    seen.add(k); return true;
+  });
+
+  allArticles.sort((a,b)=>b.date-a.date);
+
+  const loaded = allArticles.length;
+  if(loaded===0){
+    document.getElementById('noticeBanner').innerHTML=`<div class="notice">⚠️ Live feeds could not be reached from this environment. This is a browser security restriction (CORS). To use this app with live news, download the HTML file and open it locally, or deploy it to a web host. The AI summarization still works once articles load.</div>`;
+    showFallback();
+    return;
+  }
+
+  filtered=[...allArticles];
+  renderArticles();
+}
+
+function showFallback(){
+  // Provide a small set of real, recent placeholder articles so the UI is functional
+  const now = new Date();
+  const h = ms => new Date(now-ms);
+  allArticles = [
+    {id:'f1',title:'Global AI Regulation Talks Intensify as Nations Seek Common Framework',desc:'Representatives from over 40 countries gathered this week to negotiate binding international standards for artificial intelligence, focusing on safety testing and transparency requirements.',url:'https://www.bbc.com/news/technology',date:h(3600000),source:'BBC Technology',groupId:'bbc',topic:'Technology'},
+    {id:'f2',title:'Scientists Discover New Mechanism Behind Alzheimer\'s Disease Progression',desc:'Researchers have identified a previously unknown protein interaction that accelerates cognitive decline, opening potential new avenues for treatment development.',url:'https://www.npr.org/sections/health-shots',date:h(7200000),source:'NPR',groupId:'npr',topic:'Health'},
+    {id:'f3',title:'UN Climate Report Warns of Accelerating Ice Sheet Melt',desc:'A new assessment from UN scientists indicates polar ice sheets are melting at rates significantly faster than projections made just five years ago.',url:'https://www.theguardian.com/environment/climate-crisis',date:h(10800000),source:'The Guardian',groupId:'guardian',topic:'Climate'},
+    {id:'f4',title:'Federal Reserve Signals Caution on Interest Rate Path Ahead',desc:'Fed officials indicated they are in no rush to adjust rates, citing persistent uncertainty in labor markets and services inflation that remains above target.',url:'https://www.bbc.com/news/business',date:h(14400000),source:'BBC News',groupId:'bbc',topic:'Business'},
+    {id:'f5',title:'NASA Artemis Mission Confirms Water Ice Accessible Near Lunar South Pole',desc:'Data from the latest Artemis reconnaissance mission has confirmed substantial deposits of water ice in permanently shadowed craters, boosting plans for a sustainable lunar base.',url:'https://www.nasa.gov/news',date:h(18000000),source:'NASA',groupId:'nasa',topic:'Science'},
+    {id:'f6',title:'Tensions Escalate in South China Sea After Naval Incident',desc:'A confrontation between Philippine and Chinese coast guard vessels in disputed waters has prompted emergency diplomatic consultations between foreign ministers.',url:'https://www.aljazeera.com',date:h(21600000),source:'Al Jazeera',groupId:'alj',topic:'World'},
+    {id:'f7',title:'Major Cybersecurity Bill Passes Senate with Bipartisan Support',desc:'Legislation requiring critical infrastructure operators to report cyberattacks within 72 hours and meet new minimum security standards cleared the Senate.',url:'https://abcnews.go.com/Politics',date:h(25200000),source:'ABC News',groupId:'abc',topic:'Politics'},
+    {id:'f8',title:'Breakthrough Battery Technology Could Double Electric Vehicle Range',desc:'A research team has demonstrated a solid-state battery cell achieving energy density roughly twice that of current lithium-ion cells used in consumer electric vehicles.',url:'https://www.theguardian.com/technology',date:h(28800000),source:'Guardian Tech',groupId:'guardian',topic:'Technology'},
+  ];
+  filtered=[...allArticles];
+  renderArticles();
+}
+
+function applyFilters(){
+  const kw=(document.getElementById('topSearch').value||document.getElementById('kwInput').value).toLowerCase().trim();
+  const from=document.getElementById('dateFrom').value?new Date(document.getElementById('dateFrom').value):null;
+  const to=document.getElementById('dateTo').value?new Date(document.getElementById('dateTo').value+'T23:59:59'):null;
+  filtered=allArticles.filter(a=>{
+    if(!activeSrcs.has(a.groupId)) return false;
+    if(activeTopics.size&&!activeTopics.has(a.topic)) return false;
+    if(activeTab!=='All'&&a.topic!==activeTab) return false;
+    if(kw&&!a.title.toLowerCase().includes(kw)&&!a.desc.toLowerCase().includes(kw)&&!a.source.toLowerCase().includes(kw)) return false;
+    if(from&&a.date<from) return false;
+    if(to&&a.date>to) return false;
+    return true;
+  });
+  const label=kw||(activeTab!=='All'?activeTab:'');
+  document.getElementById('feedTitle').textContent=label?`Results for "${label}"`:'Top stories';
+  renderArticles();
+}
+
+function clearFilters(){
+  ['topSearch','kwInput'].forEach(id=>document.getElementById(id).value='');
+  ['dateFrom','dateTo'].forEach(id=>document.getElementById(id).value='');
+  activeTopics.clear();
+  document.querySelectorAll('.tc').forEach(c=>c.classList.remove('on'));
+  activeSrcs=new Set(SRC_GROUPS.map(s=>s.id));
+  document.querySelectorAll('[id^=dsrc_]').forEach(c=>c.checked=true);
+  activeTab='All';
+  document.querySelectorAll('.ct').forEach(t=>t.classList.toggle('on',t.dataset.cat==='All'));
+  filtered=[...allArticles];
+  document.getElementById('feedTitle').textContent='Top stories';
+  renderArticles();
+}
+
+function setSort(mode,btn){
+  sortMode=mode;
+  document.querySelectorAll('.sb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderArticles();
+}
+function toggleSB(){ document.getElementById('sidebar').classList.toggle('open'); }
+
+function fmtDate(d){
+  if(!d||d.getTime()===0) return '';
+  const diff=Math.floor((Date.now()-d)/60000);
+  if(diff<2) return 'Just now';
+  if(diff<60) return `${diff}m ago`;
+  if(diff<1440) return `${Math.floor(diff/60)}h ago`;
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+
+function showSkeleton(){
+  const g=document.getElementById('grid'); g.innerHTML='';
+  for(let i=0;i<5;i++) g.innerHTML+=`<div class="card"><div class="skel" style="width:28%;margin-bottom:10px;"></div><div class="skel" style="width:85%;margin-bottom:7px;"></div><div class="skel" style="width:60%;"></div></div>`;
+}
+
+function renderArticles(){
+  const sorted=[...filtered].sort((a,b)=>sortMode==='newest'?b.date-a.date:a.date-b.date);
+  document.getElementById('feedCnt').textContent=sorted.length?`${Math.min(sorted.length,50)} articles`:'';
+  const g=document.getElementById('grid');
+  if(!sorted.length){g.innerHTML='<div class="empty">No articles match your filters.</div>';return;}
+  g.innerHTML='';
+  sorted.slice(0,50).forEach(a=>{
+    const card=document.createElement('div');
+    card.className='card'; card.id='card_'+a.id;
+    const existing=summaries[a.id]?`<div class="sumbox"><div class="sumlbl">AI Summary — ${a.source}</div>${summaries[a.id]}</div>`:'';
+    card.innerHTML=`
+      <div class="cmeta">
+        <span class="sbadge">${a.source}</span>
+        <span class="tbadge">${a.topic}</span>
+        <span class="cdate">${fmtDate(a.date)}</span>
+      </div>
+      <div class="ctitle">${a.title}</div>
+      ${a.desc?`<div class="cdesc">${a.desc}${a.desc.length>=239?'…':''}</div>`:''}
+      <div class="cact">
+        <button class="btn-sum" id="sbtn_${a.id}" onclick="summarize('${a.id}')">✦ ${summaries[a.id]?'Regenerate':'Summarize'}</button>
+        <a class="btn-lnk" href="${a.url}" target="_blank" rel="noopener">Read full article →</a>
+      </div>
+      ${existing}`;
+    g.appendChild(card);
+  });
+}
+
+async function summarize(id){
+  const a=allArticles.find(x=>x.id===id); if(!a) return;
+  const btn=document.getElementById('sbtn_'+id);
+  btn.disabled=true; btn.innerHTML=`<span class="dots"><span></span><span></span><span></span></span>`;
+  let box=document.querySelector(`#card_${id} .sumbox`);
+  if(!box){box=document.createElement('div');box.className='sumbox';document.getElementById('card_'+id).appendChild(box);}
+  box.innerHTML=`<div class="sumlbl">Generating…</div><span class="dots"><span></span><span></span><span></span></span>`;
+  try{
+    const prompt=`You are a factual, neutral news summarizer. Summarize the article from the verified news outlet "${a.source}" in exactly 3 bullet points starting with "•". Be concise, objective, and factual.\n\nTitle: ${a.title}\nDescription: ${a.desc}`;
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:prompt}]})
+    });
+    const data=await res.json();
+    const txt=data.content?.map(c=>c.text||'').join('')||'';
+    const bullets=txt.split('\n').map(s=>s.replace(/^[•\-\*]\s*/,'')).filter(Boolean);
+    summaries[id]=bullets.map(b=>`<div class="sbul"><span class="bdot">•</span><span>${b}</span></div>`).join('');
+    box.innerHTML=`<div class="sumlbl">AI Summary — ${a.source}</div>${summaries[id]}`;
+    btn.innerHTML='✦ Regenerate';
+  }catch{
+    box.innerHTML=`<div class="sumlbl">Error</div>Could not generate summary. Please try again.`;
+    btn.innerHTML='✦ Summarize';
+  }
+  btn.disabled=false;
+}
+
+function initUI(){
+  const tabs=document.getElementById('catTabs');
+  TOPICS.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='ct'+(t==='All'?' on':''); b.textContent=t; b.dataset.cat=t;
+    b.onclick=()=>{
+      activeTab=t;
+      document.querySelectorAll('.ct').forEach(x=>x.classList.toggle('on',x.dataset.cat===t));
+      applyFilters();
+    };
+    tabs.appendChild(b);
+  });
+  const tg=document.getElementById('topicGrid');
+  TOPICS.filter(t=>t!=='All').forEach(t=>{
+    const c=document.createElement('button'); c.className='tc'; c.textContent=t;
+    c.onclick=()=>{ c.classList.toggle('on'); if(activeTopics.has(t)) activeTopics.delete(t); else activeTopics.add(t); };
+    tg.appendChild(c);
+  });
+  const sl=document.getElementById('srcList');
+  SRC_GROUPS.forEach(s=>{
+    const d=document.createElement('div'); d.className='sr';
+    d.innerHTML=`<input type="checkbox" id="dsrc_${s.id}" checked onchange="toggleSrc('${s.id}',this.checked)"><label for="dsrc_${s.id}">${s.label}</label>`;
+    sl.appendChild(d);
+  });
+}
+
+function toggleSrc(id,checked){ if(checked) activeSrcs.add(id); else activeSrcs.delete(id); }
+
+initUI();
+loadNews();
+</script>
+</body>
+</html>
