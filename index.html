@@ -362,9 +362,11 @@ async function summarize(id){
       body:JSON.stringify({model:'llama3-8b-8192',max_tokens:400,messages:[{role:'user',content:prompt}]})
     });
     const data=await res.json();
-    const txt=data.choices?.[0]?.message?.content||'';
-    const bullets=txt.split('\n').map(s=>s.replace(/^[•\-\*]\s*/,'')).filter(Boolean);
-    summaries[id]=bullets.map(b=>`<div class="sbul"><span class="bdot">•</span><span>${b}</span></div>`).join('');
+    const txt=data.choices?.[0]?.message?.content||'No summary available.';
+    const lines=txt.split('\n').map(s=>s.replace(/^[•\-\*\d\.]+\s*/,'').trim()).filter(s=>s.length>10);
+    summaries[id]=lines.length
+      ? lines.map(b=>`<div class="sbul"><span class="bdot">•</span><span>${b}</span></div>`).join('')
+      : `<div class="sbul"><span class="bdot">•</span><span>${txt}</span></div>`;
     box.innerHTML=`<div class="sumlbl">AI Summary — ${a.source}</div>${summaries[id]}`;
     btn.innerHTML='✦ Regenerate';
   }catch{
