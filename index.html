@@ -358,15 +358,18 @@ async function summarize(id){
   try{
     const prompt=`You are a factual, neutral news summarizer. Summarize the article from the verified news outlet "${a.source}" in exactly 3 bullet points starting with "•". Be concise, objective, and factual.\n\nTitle: ${a.title}\nDescription: ${a.desc}`;
     const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
-      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer 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'},
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer YOUR_GROQ_KEY_HERE'},
       body:JSON.stringify({model:'llama3-8b-8192',max_tokens:400,messages:[{role:'user',content:prompt}]})
     });
     const data=await res.json();
-    const txt=data.choices?.[0]?.message?.content||'No summary available.';
-    const lines=txt.split('\n').map(s=>s.replace(/^[•\-\*\d\.]+\s*/,'').trim()).filter(s=>s.length>10);
-    summaries[id]=lines.length
-      ? lines.map(b=>`<div class="sbul"><span class="bdot">•</span><span>${b}</span></div>`).join('')
-      : `<div class="sbul"><span class="bdot">•</span><span>${txt}</span></div>`;
+    const txt=data.choices?.[0]?.message?.content||'';
+    if(!txt){
+      box.innerHTML=`<div class="sumlbl">Error</div>No response from AI. Please try again.`;
+      btn.innerHTML='✦ Summarize';
+      btn.disabled=false;
+      return;
+    }
+    summaries[id]=`<div style="font-size:13px;line-height:1.8;color:#1a1a1a;">${txt.replace(/\n/g,'<br>')}</div>`;
     box.innerHTML=`<div class="sumlbl">AI Summary — ${a.source}</div>${summaries[id]}`;
     btn.innerHTML='✦ Regenerate';
   }catch{
