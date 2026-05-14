@@ -125,7 +125,11 @@ button{cursor:pointer;border:none;background:none;font-family:inherit;}
 </div>
 
 <script>
-const PROXY = 'https://api.allorigins.win/get?url=';
+const PROXIES = [
+  url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+];
 
 const FEEDS = [
   {id:'bbc',      label:'BBC News',         url:'https://feeds.bbci.co.uk/news/rss.xml',                                 topic:'World'},
@@ -185,23 +189,36 @@ function parseRSS(xml){
   }));
 }
 
+async function fetchWithProxy(url, proxyFn){
+  const r = await fetch(proxyFn(url), {signal: AbortSignal.timeout(8000)});
+  const text = await r.text();
+  // allorigins returns JSON with contents, others return raw XML
+  try {
+    const json = JSON.parse(text);
+    return json.contents || text;
+  } catch { return text; }
+}
+
 async function fetchFeed(feed){
-  try{
-    const r = await fetch(PROXY + encodeURIComponent(feed.url), {signal: AbortSignal.timeout(8000)});
-    const json = await r.json();
-    if(!json.contents) return [];
-    const items = parseRSS(json.contents);
-    return items.map((item,i)=>({
-      id: feed.id+'_'+i,
-      title: item.title||'Untitled',
-      desc: item.desc,
-      url: item.url,
-      date: item.pubDate ? new Date(item.pubDate) : new Date(0),
-      source: SRC_GROUPS.find(g=>g.ids.includes(feed.id))?.label||feed.label,
-      groupId: srcGroupId(feed.id),
-      topic: guessTopic(item.title, item.desc, feed.topic),
-    }));
-  } catch(e){ return []; }
+  for(const proxyFn of PROXIES){
+    try{
+      const xml = await fetchWithProxy(feed.url, proxyFn);
+      if(!xml || xml.length < 100) continue;
+      const items = parseRSS(xml);
+      if(!items.length) continue;
+      return items.map((item,i)=>({
+        id: feed.id+'_'+i,
+        title: item.title||'Untitled',
+        desc: item.desc,
+        url: item.url,
+        date: item.pubDate ? new Date(item.pubDate) : new Date(0),
+        source: SRC_GROUPS.find(g=>g.ids.includes(feed.id))?.label||feed.label,
+        groupId: srcGroupId(feed.id),
+        topic: guessTopic(item.title, item.desc, feed.topic),
+      }));
+    } catch(e){ continue; }
+  }
+  return [];
 }
 
 async function loadNews(){
@@ -340,12 +357,12 @@ async function summarize(id){
   box.innerHTML=`<div class="sumlbl">Generating…</div><span class="dots"><span></span><span></span><span></span></span>`;
   try{
     const prompt=`You are a factual, neutral news summarizer. Summarize the article from the verified news outlet "${a.source}" in exactly 3 bullet points starting with "•". Be concise, objective, and factual.\n\nTitle: ${a.title}\nDescription: ${a.desc}`;
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:prompt}]})
+    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer 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'},
+      body:JSON.stringify({model:'llama3-8b-8192',max_tokens:400,messages:[{role:'user',content:prompt}]})
     });
     const data=await res.json();
-    const txt=data.content?.map(c=>c.text||'').join('')||'';
+    const txt=data.choices?.[0]?.message?.content||'';
     const bullets=txt.split('\n').map(s=>s.replace(/^[•\-\*]\s*/,'')).filter(Boolean);
     summaries[id]=bullets.map(b=>`<div class="sbul"><span class="bdot">•</span><span>${b}</span></div>`).join('');
     box.innerHTML=`<div class="sumlbl">AI Summary — ${a.source}</div>${summaries[id]}`;
