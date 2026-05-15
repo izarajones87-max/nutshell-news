@@ -356,13 +356,14 @@ async function summarize(id){
   if(!box){box=document.createElement('div');box.className='sumbox';document.getElementById('card_'+id).appendChild(box);}
   box.innerHTML=`<div class="sumlbl">Generating…</div><span class="dots"><span></span><span></span><span></span></span>`;
   try{
-    const prompt=`You are a factual, neutral news summarizer. Summarize the article from the verified news outlet "${a.source}" in exactly 3 bullet points starting with "•". Be concise, objective, and factual.\n\nTitle: ${a.title}\nDescription: ${a.desc}`;
-    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
-      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer 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'},
-      body:JSON.stringify({model:'mixtral-8x7b-32768',max_tokens:400,messages:[{role:'user',content:prompt}]})
+    const prompt=`You are a news summarizer. Based on this headline and description from the verified outlet "${a.source}", write exactly 3 bullet points starting with "•" that summarize the key points. Use only the information provided — do not say you lack access to the article, just summarize what is given.\n\nHeadline: ${a.title}\nDescription: ${a.desc}`;
+    const res=await fetch('https://api-inference.huggingface.co/models/facebook/bart-large-cnn',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({inputs:`${a.title}. ${a.desc}`})
     });
     const data=await res.json();
-    const txt=data.choices?.[0]?.message?.content||'';
+    const txt=Array.isArray(data)&&data[0]?.summary_text?data[0].summary_text:'Could not generate summary.';
     if(!txt){
       box.innerHTML=`<div class="sumlbl">Error</div>No response from AI. Please try again.`;
       btn.innerHTML='✦ Summarize';
